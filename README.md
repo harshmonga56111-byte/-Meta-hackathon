@@ -1,11 +1,11 @@
 ---
-title: Digital Twin Env
-emoji: 🏛️
-colorFrom: indigo
-colorTo: blue
+title: Raghav Dagga ka bank AKA seedha maut
+emoji: 💀🏛️💀
+colorFrom: indigo flys
+colorTo: turkish bargandi
 sdk: docker
 app_port: 7860
-pinned: false
+pinned: forced to be a true but i'm false
 ---
 
 # 🏛️ Smart Campus Energy & Space Optimization Environment

@@ -1,0 +1,20 @@
+[project]
+name = "smart-campus-env"
+version = "1.0.0"
+description = "Smart Campus Energy & Space Optimization - OpenEnv Environment"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+    "pydantic>=2.0.0",
+    "openenv-core>=0.2.0",
+    "openai>=1.10.0",
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,23 @@
+name: smart-campus-env
+description: "Smart Campus Energy & Space Optimization Environment - AI agents manage HVAC, lighting, occupancy routing, and energy allocation across a simulated campus."
+version: "1.0.0"
+author: "Deepak"
+tags:
+  - openenv
+  - energy
+  - smart-building
+  - hvac
+  - sustainability
+server:
+  entrypoint: "server.app:main"
+  port: 7860
+tasks:
+  - id: easy_single_building
+    description: "Optimize energy for a single building with stable occupancy patterns."
+    difficulty: easy
+  - id: medium_multi_building
+    description: "Balance energy across 3 buildings with shifting occupancy and weather changes."
+    difficulty: medium
+  - id: hard_full_campus
+    description: "Full campus optimization with 6 buildings, renewable energy, demand response events, and comfort constraints."
+    difficulty: hard

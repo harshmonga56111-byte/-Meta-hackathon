@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Campus — Energy & Space Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e17;--bg2:#111827;--bg3:#1a2332;--bg4:#243044;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --accent:#22d3ee;--accent2:#06b6d4;--accent-glow:rgba(34,211,238,0.15);
+  --green:#10b981;--green-glow:rgba(16,185,129,0.15);
+  --amber:#f59e0b;--amber-glow:rgba(245,158,11,0.15);
+  --red:#ef4444;--red-glow:rgba(239,68,68,0.15);
+  --blue:#3b82f6;--purple:#8b5cf6;
+  --card-border:rgba(34,211,238,0.08);
+  --radius:12px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* Animated grid bg */
+body::before{content:'';position:fixed;inset:0;
+  background:
+    linear-gradient(rgba(34,211,238,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,211,238,0.03) 1px,transparent 1px);
+  background-size:60px 60px;z-index:0;pointer-events:none}
+body::after{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 20%,rgba(34,211,238,0.06),transparent 60%),
+             radial-gradient(ellipse at 80% 80%,rgba(139,92,246,0.04),transparent 60%);
+  z-index:0;pointer-events:none}
+
+.app{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:20px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--card-border);border-radius:16px;margin-bottom:20px;
+  box-shadow:0 4px 30px rgba(0,0,0,0.3)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:42px;height:42px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 0 20px rgba(34,211,238,0.3)}
+.logo h1{font-size:1.4rem;font-weight:700;letter-spacing:-0.5px}
+.logo h1 span{color:var(--accent)}
+.header-controls{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 18px;border-radius:8px;border:1px solid var(--card-border);
+  background:var(--bg3);color:var(--text);cursor:pointer;font-family:inherit;
+  font-size:0.85rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent);background:var(--accent-glow)}
+.btn.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));
+  color:var(--bg);border-color:transparent;font-weight:600}
+.btn.primary:hover{box-shadow:0 0 25px rgba(34,211,238,0.4);transform:translateY(-1px)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:var(--red-glow)}
+select.task-select{padding:8px 12px;border-radius:8px;border:1px solid var(--card-border);
+  background:var(--bg3);color:var(--text);font-family:inherit;font-size:0.85rem;cursor:pointer}
+
+/* Status bar */
+.status-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{padding:16px 20px;background:var(--bg2);border:1px solid var(--card-border);
+  border-radius:var(--radius);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.cyan::before{background:linear-gradient(90deg,var(--accent),transparent)}
+.stat-card.green::before{background:linear-gradient(90deg,var(--green),transparent)}
+.stat-card.amber::before{background:linear-gradient(90deg,var(--amber),transparent)}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),transparent)}
+.stat-card.purple::before{background:linear-gradient(90deg,var(--purple),transparent)}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),transparent)}
+.stat-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:6px}
+.stat-value{font-size:1.6rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+.stat-sub{font-size:0.75rem;color:var(--text2);margin-top:4px}
+.stat-card.cyan .stat-value{color:var(--accent)}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.amber .stat-value{color:var(--amber)}
+.stat-card.red .stat-value{color:var(--red)}
+.stat-card.purple .stat-value{color:var(--purple)}
+.stat-card.blue .stat-value{color:var(--blue)}
+
+/* Main grid */
+.main-grid{display:grid;grid-template-columns:1fr 380px;gap:20px}
+@media(max-width:1024px){.main-grid{grid-template-columns:1fr}}
+
+/* Building cards */
+.buildings-section h2{font-size:1rem;font-weight:600;margin-bottom:12px;color:var(--text2);
+  display:flex;align-items:center;gap:8px}
+.buildings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.building-card{background:var(--bg2);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:18px;transition:all 0.3s;position:relative;overflow:hidden}
+.building-card:hover{border-color:rgba(34,211,238,0.2);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.building-card.alert{border-color:rgba(239,68,68,0.3);animation:pulse-alert 2s infinite}
+@keyframes pulse-alert{0%,100%{box-shadow:0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 15px rgba(239,68,68,0.15)}}
+.b-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.b-name{font-weight:600;font-size:0.95rem}
+.b-badge{padding:3px 10px;border-radius:20px;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.b-badge.occupied{background:var(--green-glow);color:var(--green);border:1px solid rgba(16,185,129,0.3)}
+.b-badge.empty{background:var(--bg3);color:var(--text3);border:1px solid var(--card-border)}
+.b-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.b-metric{background:var(--bg3);border-radius:8px;padding:10px 12px}
+.b-metric-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px}
+.b-metric-val{font-size:1.1rem;font-weight:600;font-family:'JetBrains Mono',monospace}
+.b-comfort-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:8px}
+.b-comfort-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+.b-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.b-control{display:flex;flex-direction:column;gap:4px}
+.b-control label{font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+.b-control select,.b-control input{padding:6px 8px;border-radius:6px;border:1px solid var(--card-border);
+  background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.8rem}
+
+/* Right panel */
+.right-panel{display:flex;flex-direction:column;gap:16px}
+.panel-card{background:var(--bg2);border:1px solid var(--card-border);border-radius:var(--radius);padding:18px}
+.panel-card h3{font-size:0.85rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--text2)}
+
+/* Weather */
+.weather-display{text-align:center;padding:10px 0}
+.weather-temp{font-size:3rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent);line-height:1}
+.weather-details{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.weather-detail{background:var(--bg3);border-radius:8px;padding:10px;text-align:center}
+.weather-detail .wd-icon{font-size:1.2rem;margin-bottom:4px}
+.weather-detail .wd-val{font-size:0.95rem;font-weight:600;font-family:'JetBrains Mono',monospace}
+.weather-detail .wd-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-top:2px}
+
+/* Energy chart area */
+.energy-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.energy-bar-label{width:60px;font-size:0.7rem;text-transform:uppercase;color:var(--text3);text-align:right}
+.energy-bar-track{flex:1;height:18px;background:var(--bg);border-radius:9px;overflow:hidden;position:relative}
+.energy-bar-fill{height:100%;border-radius:9px;transition:width 0.5s}
+.energy-bar-val{width:55px;font-size:0.8rem;font-family:'JetBrains Mono',monospace;color:var(--text2)}
+.battery-visual{display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 0}
+.battery-icon{width:80px;height:36px;border:2px solid var(--text3);border-radius:6px;position:relative;overflow:hidden}
+.battery-icon::after{content:'';position:absolute;right:-7px;top:50%;transform:translateY(-50%);
+  width:5px;height:14px;background:var(--text3);border-radius:0 3px 3px 0}
+.battery-fill{height:100%;transition:width 0.5s;border-radius:3px}
+.battery-pct{font-size:1.4rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+
+/* Alerts */
+.alerts-list{max-height:200px;overflow-y:auto}
+.alert-item{padding:10px 12px;background:var(--bg3);border-radius:8px;margin-bottom:6px;
+  font-size:0.8rem;border-left:3px solid var(--amber);color:var(--text2);line-height:1.4}
+.alert-item.critical{border-left-color:var(--red)}
+.alert-item.demand{border-left-color:var(--purple);background:rgba(139,92,246,0.08)}
+
+/* Log */
+.log-area{background:var(--bg);border-radius:8px;padding:12px;max-height:250px;overflow-y:auto;
+  font-family:'JetBrains Mono',monospace;font-size:0.72rem;line-height:1.7;color:var(--text2)}
+.log-area .log-step{color:var(--accent)}
+.log-area .log-reward-pos{color:var(--green)}
+.log-area .log-reward-neg{color:var(--red)}
+
+/* Chart placeholder */
+.chart-container{position:relative;height:180px;background:var(--bg);border-radius:8px;overflow:hidden}
+.chart-canvas{width:100%;height:100%}
+
+/* Timeline */
+.timeline{display:flex;align-items:center;gap:4px;padding:8px 0}
+.timeline-dot{width:8px;height:8px;border-radius:50%;background:var(--bg4);transition:all 0.2s}
+.timeline-dot.active{background:var(--accent);box-shadow:0 0 8px rgba(34,211,238,0.5)}
+.timeline-dot.done{background:var(--green)}
+.timeline-connector{flex:1;height:2px;background:var(--bg4)}
+.timeline-connector.done{background:var(--green)}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.building-card{animation:fadeIn 0.3s ease forwards}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:none;
+  align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--card-border);border-radius:16px;
+  padding:30px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.modal h2{font-size:1.2rem;margin-bottom:16px;color:var(--accent)}
+.modal .score-big{font-size:4rem;font-weight:800;text-align:center;
+  font-family:'JetBrains Mono',monospace;margin:20px 0}
+.modal .score-details{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal .score-item{background:var(--bg3);border-radius:8px;padding:12px;text-align:center}
+.modal .score-item .si-val{font-size:1.2rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+.modal .score-item .si-label{font-size:0.7rem;text-transform:uppercase;color:var(--text3);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🏛️</div>
+      <h1>Smart <span>Campus</span> Optimizer</h1>
+    </div>
+    <div class="header-controls">
+      <select class="task-select" id="taskSelect">
+        <option value="easy_single_building">Easy — Single Building</option>
+        <option value="medium_multi_building">Medium — Multi Building</option>
+        <option value="hard_full_campus">Hard — Full Campus</option>
+      </select>
+      <button class="btn primary" id="btnReset" onclick="resetEnv()">▶ Start Episode</button>
+      <button class="btn" id="btnStep" onclick="stepEnv()" disabled>⏭ Step</button>
+      <button class="btn" id="btnAuto" onclick="toggleAuto()">⚡ Auto-Run</button>
+      <button class="btn danger" id="btnGrade" onclick="gradeEnv()" disabled>📊 Grade</button>
+    </div>
+  </header>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="stat-card cyan">
+      <div class="stat-label">Step</div>
+      <div class="stat-value" id="sStep">0 / 0</div>
+      <div class="stat-sub" id="sTime">—</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Avg Comfort</div>
+      <div class="stat-value" id="sComfort">—</div>
+      <div class="stat-sub">Target: > 0.70</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Energy Cost</div>
+      <div class="stat-value" id="sCost">$0.00</div>
+      <div class="stat-sub" id="sPrice">—</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Efficiency</div>
+      <div class="stat-value" id="sEfficiency">—</div>
+      <div class="stat-sub">kW per occupant</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">Total Reward</div>
+      <div class="stat-value" id="sReward">0.00</div>
+      <div class="stat-sub">Cumulative</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Alerts</div>
+      <div class="stat-value" id="sAlerts">0</div>
+      <div class="stat-sub">Active warnings</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-grid">
+    <div class="left-col">
+      <div class="buildings-section">
+        <h2>🏢 Campus Buildings</h2>
+        <div class="buildings-grid" id="buildingsGrid">
+          <div style="color:var(--text3);padding:40px;text-align:center">
+            Click <strong>Start Episode</strong> to begin simulation
+          </div>
+        </div>
+      </div>
+
+      <!-- Reward History Chart -->
+      <div class="panel-card" style="margin-top:16px">
+        <h3>📈 Reward & Comfort History</h3>
+        <div class="chart-container">
+          <canvas id="historyChart" class="chart-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Action Log -->
+      <div class="panel-card" style="margin-top:16px">
+        <h3>📋 Agent Log</h3>
+        <div class="log-area" id="logArea">Waiting for episode to start...</div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <!-- Weather -->
+      <div class="panel-card">
+        <h3>🌤️ Weather Conditions</h3>
+        <div class="weather-display">
+          <div class="weather-temp" id="wTemp">—°C</div>
+          <div class="weather-details">
+            <div class="weather-detail">
+              <div class="wd-icon">☀️</div>
+              <div class="wd-val" id="wSolar">—</div>
+              <div class="wd-label">Solar W/m²</div>
+            </div>
+            <div class="weather-detail">
+              <div class="wd-icon">💨</div>
+              <div class="wd-val" id="wWind">—</div>
+              <div class="wd-label">Wind m/s</div>
+            </div>
+            <div class="weather-detail">
+              <div class="wd-icon">☁️</div>
+              <div class="wd-val" id="wCloud">—</div>
+              <div class="wd-label">Cloud %</div>
+            </div>
+            <div class="weather-detail">
+              <div class="wd-icon">🌧️</div>
+              <div class="wd-val" id="wRain">—</div>
+              <div class="wd-label">Rain</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Energy -->
+      <div class="panel-card">
+        <h3>⚡ Energy Distribution</h3>
+        <div>
+          <div class="energy-bar">
+            <div class="energy-bar-label">Solar</div>
+            <div class="energy-bar-track"><div class="energy-bar-fill" id="eSolarBar" style="width:0;background:linear-gradient(90deg,var(--amber),#fbbf24)"></div></div>
+            <div class="energy-bar-val" id="eSolar">0 kW</div>
+          </div>
+          <div class="energy-bar">
+            <div class="energy-bar-label">Grid</div>
+            <div class="energy-bar-track"><div class="energy-bar-fill" id="eGridBar" style="width:0;background:linear-gradient(90deg,var(--blue),#60a5fa)"></div></div>
+            <div class="energy-bar-val" id="eGrid">0 kW</div>
+          </div>
+          <div class="energy-bar">
+            <div class="energy-bar-label">Total</div>
+            <div class="energy-bar-track"><div class="energy-bar-fill" id="eTotalBar" style="width:0;background:linear-gradient(90deg,var(--accent),var(--purple))"></div></div>
+            <div class="energy-bar-val" id="eTotal">0 kW</div>
+          </div>
+        </div>
+        <div class="battery-visual">
+          <div class="battery-icon"><div class="battery-fill" id="batteryFill" style="width:50%;background:var(--green)"></div></div>
+          <div class="battery-pct" id="batteryPct" style="color:var(--green)">50%</div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="panel-card">
+        <h3>🚨 Active Alerts</h3>
+        <div class="alerts-list" id="alertsList">
+          <div style="color:var(--text3);font-size:0.8rem;text-align:center;padding:20px">No alerts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Score Modal -->
+<div class="modal-overlay" id="scoreModal">
+  <div class="modal">
+    <h2>📊 Episode Score</h2>
+    <div class="score-big" id="modalScore" style="color:var(--green)">—</div>
+    <div class="score-details" id="modalDetails"></div>
+    <button class="btn primary" style="width:100%;margin-top:20px;justify-content:center" onclick="document.getElementById('scoreModal').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<script>
+let sessionId = null;
+let obs = null;
+let autoRunning = false;
+let autoInterval = null;
+let totalReward = 0;
+let rewardHistory = [];
+let comfortHistory = [];
+const BASE = window.location.origin;
+async function resetEnv() {
+  stopAuto();
+  const taskId = document.getElementById('taskSelect').value;
+  try {
+    const resp = await fetch(BASE + '/reset', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({task_id: taskId})
+    });
+    const data = await resp.json();
+    sessionId = data.session_id;
+    obs = data.observation;
+    totalReward = 0;
+    rewardHistory = [];
+    comfortHistory = [];
+    document.getElementById('btnStep').disabled = false;
+    document.getElementById('btnGrade').disabled = false;
+    updateUI();
+    addLog(`Episode started: ${taskId} (${obs.max_steps} steps)`);
+  } catch(e) {
+    addLog(`ERROR: ${e.message}`);
+  }
+}
+async function stepEnv() {
+  if (!sessionId || !obs) return;
+  // Simple heuristic agent for UI demo
+  const action = buildHeuristicAction(obs);
+  try {
+    const resp = await fetch(BASE + '/step?session_id=' + sessionId, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(action)
+    });
+    const result = await resp.json();
+    obs = result.observation;
+    totalReward += result.reward;
+    rewardHistory.push(result.reward);
+    comfortHistory.push(obs.avg_comfort_score);
+    updateUI();
+    addLog(`Step ${obs.step}: reward=${result.reward > 0 ? '+' : ''}${result.reward.toFixed(3)} comfort=${obs.avg_comfort_score.toFixed(3)} cost=$${obs.total_energy_cost.toFixed(2)}`);
+    if (result.done) {
+      addLog('Episode complete!');
+      document.getElementById('btnStep').disabled = true;
+      stopAuto();
+    }
+    drawChart();
+  } catch(e) {
+    addLog(`ERROR: ${e.message}`);
+  }
+}
+function buildHeuristicAction(obs) {
+  const actions = obs.buildings.map(b => {
+    const a = {zone_id: b.zone_id};
+    // Reduce energy in empty zones
+    if (b.occupancy < 5) {
+      a.set_hvac_mode = 'off';
+      a.set_lighting = 'off';
+    } else {
+      // Cool if too hot, heat if too cold
+      if (b.current_temp > b.target_temp + 2) a.set_hvac_mode = 'cooling';
+      else if (b.current_temp < b.target_temp - 2) a.set_hvac_mode = 'heating';
+      else a.set_hvac_mode = 'auto';
+      // Lighting based on occupancy
+      const ratio = b.occupancy / b.max_occupancy;
+      a.set_lighting = ratio > 0.5 ? 'high' : ratio > 0.2 ? 'medium' : 'low';
+    }
+    // Optimal target temp
+    a.set_target_temp = 23;
+    return a;
+  });
+  // Battery: charge when solar high & grid cheap, discharge when expensive
+  let battMode = 'auto';
+  if (obs.energy.grid_price_per_kwh > 0.2) battMode = 'discharge';
+  else if (obs.weather.solar_irradiance_w_m2 > 400) battMode = 'charge';
+  return {zone_actions: actions, set_battery_mode: battMode};
+}
+async function gradeEnv() {
+  if (!sessionId) return;
+  try {
+    const resp = await fetch(BASE + '/grade?session_id=' + sessionId, {method: 'POST'});
+    const data = await resp.json();
+    const modal = document.getElementById('scoreModal');
+    const scoreColor = data.score > 0.7 ? 'var(--green)' : data.score > 0.4 ? 'var(--amber)' : 'var(--red)';
+    document.getElementById('modalScore').textContent = data.score.toFixed(4);
+    document.getElementById('modalScore').style.color = scoreColor;
+    const details = data.details || {};
+    document.getElementById('modalDetails').innerHTML = `
+      <div class="score-item"><div class="si-val">${details.steps_taken || 0}</div><div class="si-label">Steps</div></div>
+      <div class="score-item"><div class="si-val">$${(details.total_cost || 0).toFixed(2)}</div><div class="si-label">Total Cost</div></div>
+      <div class="score-item"><div class="si-val">${(details.avg_comfort || 0).toFixed(3)}</div><div class="si-label">Avg Comfort</div></div>
+      <div class="score-item"><div class="si-val">${(details.avg_efficiency || 0).toFixed(3)}</div><div class="si-label">Avg Efficiency</div></div>
+    `;
+    modal.classList.add('show');
+    addLog(`GRADE: ${data.score.toFixed(4)} (task: ${data.task_id})`);
+  } catch(e) {
+    addLog(`Grade error: ${e.message}`);
+  }
+}
+function toggleAuto() {
+  if (autoRunning) { stopAuto(); return; }
+  autoRunning = true;
+  document.getElementById('btnAuto').textContent = '⏸ Stop';
+  document.getElementById('btnAuto').classList.add('danger');
+  autoInterval = setInterval(() => {
+    if (!obs || obs.step >= obs.max_steps) { stopAuto(); return; }
+    stepEnv();
+  }, 400);
+}
+function stopAuto() {
+  autoRunning = false;
+  if (autoInterval) clearInterval(autoInterval);
+  autoInterval = null;
+  document.getElementById('btnAuto').textContent = '⚡ Auto-Run';
+  document.getElementById('btnAuto').classList.remove('danger');
+}
+function updateUI() {
+  if (!obs) return;
+  // Status bar
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hour = Math.floor(obs.time_of_day);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const h12 = hour % 12 || 12;
+  document.getElementById('sStep').textContent = `${obs.step} / ${obs.max_steps}`;
+  document.getElementById('sTime').textContent = `${dayNames[obs.day_of_week]} ${h12}:00 ${ampm}`;
+  document.getElementById('sComfort').textContent = obs.avg_comfort_score.toFixed(3);
+  document.getElementById('sCost').textContent = `$${obs.total_energy_cost.toFixed(2)}`;
+  document.getElementById('sPrice').textContent = `Grid: $${obs.energy.grid_price_per_kwh.toFixed(3)}/kWh`;
+  document.getElementById('sEfficiency').textContent = obs.energy_efficiency_score.toFixed(3);
+  document.getElementById('sReward').textContent = totalReward.toFixed(2);
+  document.getElementById('sAlerts').textContent = obs.alerts.length;
+  // Weather
+  document.getElementById('wTemp').textContent = `${obs.weather.outdoor_temp_c}°C`;
+  document.getElementById('wSolar').textContent = obs.weather.solar_irradiance_w_m2.toFixed(0);
+  document.getElementById('wWind').textContent = obs.weather.wind_speed_ms.toFixed(1);
+  document.getElementById('wCloud').textContent = `${obs.weather.cloud_cover_pct.toFixed(0)}%`;
+  document.getElementById('wRain').textContent = obs.weather.is_raining ? 'Yes' : 'No';
+  // Energy bars
+  const maxE = Math.max(obs.energy.total_consumption_kw, 1);
+  setBar('eSolarBar', obs.energy.solar_generation_kw, maxE);
+  document.getElementById('eSolar').textContent = `${obs.energy.solar_generation_kw.toFixed(1)} kW`;
+  setBar('eGridBar', obs.energy.grid_draw_kw, maxE);
+  document.getElementById('eGrid').textContent = `${obs.energy.grid_draw_kw.toFixed(1)} kW`;
+  setBar('eTotalBar', obs.energy.total_consumption_kw, maxE);
+  document.getElementById('eTotal').textContent = `${obs.energy.total_consumption_kw.toFixed(1)} kW`;
+  // Battery
+  const bp = obs.energy.battery_level_pct;
+  document.getElementById('batteryFill').style.width = bp + '%';
+  document.getElementById('batteryPct').textContent = bp.toFixed(0) + '%';
+  const batColor = bp > 50 ? 'var(--green)' : bp > 20 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('batteryFill').style.background = batColor;
+  document.getElementById('batteryPct').style.color = batColor;
+  // Buildings
+  const grid = document.getElementById('buildingsGrid');
+  grid.innerHTML = obs.buildings.map((b, i) => {
+    const comfortColor = b.comfort_score > 0.7 ? 'var(--green)' : b.comfort_score > 0.4 ? 'var(--amber)' : 'var(--red)';
+    const isAlert = b.comfort_score < 0.5 || b.current_temp > 29;
+    const occPct = ((b.occupancy / b.max_occupancy) * 100).toFixed(0);
+    return `<div class="building-card ${isAlert ? 'alert' : ''}" style="animation-delay:${i * 0.05}s">
+      <div class="b-header">
+        <div class="b-name">${b.name}</div>
+        <div class="b-badge ${b.occupancy > 5 ? 'occupied' : 'empty'}">${b.occupancy > 5 ? `${occPct}% Full` : 'Empty'}</div>
+      </div>
+      <div class="b-metrics">
+        <div class="b-metric">
+          <div class="b-metric-label">🌡️ Temperature</div>
+          <div class="b-metric-val" style="color:${b.current_temp > 28 ? 'var(--red)' : b.current_temp < 18 ? 'var(--blue)' : 'var(--text)'}">${b.current_temp}°C → ${b.target_temp}°C</div>
+        </div>
+        <div class="b-metric">
+          <div class="b-metric-label">👥 Occupancy</div>
+          <div class="b-metric-val">${b.occupancy} / ${b.max_occupancy}</div>
+        </div>
+        <div class="b-metric">
+          <div class="b-metric-label">⚡ Energy</div>
+          <div class="b-metric-val">${b.energy_consumption_kw} kW</div>
+        </div>
+        <div class="b-metric">
+          <div class="b-metric-label">💨 CO₂</div>
+          <div class="b-metric-val" style="color:${b.co2_ppm > 800 ? 'var(--red)' : 'var(--text)'}">${b.co2_ppm} ppm</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text3)">
+        <span>Comfort</span><span style="color:${comfortColor}">${(b.comfort_score * 100).toFixed(1)}%</span>
+      </div>
+      <div class="b-comfort-bar"><div class="b-comfort-fill" style="width:${b.comfort_score * 100}%;background:${comfortColor}"></div></div>
+      <div style="display:flex;gap:8px;margin-top:10px;font-size:0.7rem;color:var(--text3)">
+        <span style="padding:3px 8px;background:var(--bg3);border-radius:4px">HVAC: ${b.hvac_mode.toUpperCase()}</span>
+        <span style="padding:3px 8px;background:var(--bg3);border-radius:4px">💡 ${b.lighting.toUpperCase()}</span>
+        <span style="padding:3px 8px;background:var(--bg3);border-radius:4px">💧 ${b.humidity_percent}%</span>
+      </div>
+    </div>`;
+  }).join('');
+  // Alerts
+  const alertsList = document.getElementById('alertsList');
+  if (obs.alerts.length === 0) {
+    alertsList.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;text-align:center;padding:20px">✅ All systems normal</div>';
+  } else {
+    alertsList.innerHTML = obs.alerts.map(a => {
+      const cls = a.includes('DEMAND') ? 'demand' : a.includes('critical') ? 'critical' : '';
+      return `<div class="alert-item ${cls}">${a}</div>`;
+    }).join('');
+  }
+}
+function setBar(id, val, max) {
+  document.getElementById(id).style.width = Math.min(100, (val / max) * 100) + '%';
+}
+function addLog(msg) {
+  const log = document.getElementById('logArea');
+  const isStep = msg.startsWith('Step');
+  const hasReward = msg.includes('reward=');
+  let html = msg;
+  if (isStep) html = `<span class="log-step">${msg.split(':')[0]}</span>:${msg.split(':').slice(1).join(':')}`;
+  if (hasReward) {
+    html = html.replace(/(reward=[+-]?\d+\.\d+)/, (m) => {
+      return m.includes('-') ? `<span class="log-reward-neg">${m}</span>` : `<span class="log-reward-pos">${m}</span>`;
+    });
+  }
+  log.innerHTML += `<div>${html}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+// Simple canvas chart
+function drawChart() {
+  const canvas = document.getElementById('historyChart');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.parentElement.clientWidth;
+  const h = canvas.height = canvas.parentElement.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  if (rewardHistory.length < 2) return;
+  const pad = {t:20, b:20, l:40, r:10};
+  const cw = w - pad.l - pad.r;
+  const ch = h - pad.t - pad.b;
+  // Draw reward line
+  const rMin = Math.min(...rewardHistory, 0);
+  const rMax = Math.max(...rewardHistory, 1);
+  const rRange = rMax - rMin || 1;
+  ctx.beginPath();
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  rewardHistory.forEach((v, i) => {
+    const x = pad.l + (i / (rewardHistory.length - 1)) * cw;
+    const y = pad.t + ch - ((v - rMin) / rRange) * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  // Draw comfort line
+  ctx.beginPath();
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  comfortHistory.forEach((v, i) => {
+    const x = pad.l + (i / (comfortHistory.length - 1)) * cw;
+    const y = pad.t + ch - v * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  // Labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText('Reward', pad.l, 12);
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(pad.l + 50, 6, 12, 3);
+  ctx.fillStyle = '#10b981';
+  ctx.fillRect(pad.l + 50, 12, 12, 3);
+  ctx.fillStyle = '#64748b';
+  ctx.fillText('Comfort', pad.l + 66, 12);
+}
+window.addEventListener('resize', drawChart);
+</script>
+</body>
+</html>
